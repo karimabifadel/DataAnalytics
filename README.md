@@ -1,1 +1,1 @@
-# DataAnalytics
+This repository contains several data analytics projects using R.
