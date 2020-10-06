@@ -1,0 +1,268 @@
+---
+title: "World Data"
+author: "Karim Abi Fadel"
+date: "2020-10-06"
+output:
+  html_document:
+    theme: flatly
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    code_folding: show
+---
+
+
+
+<div id="world-data" class="section level1">
+<h1>World Data</h1>
+<pre class="r"><code># load gapminder HIV data
+hiv &lt;- read_csv(here::here(&quot;data&quot;,&quot;adults_with_hiv_percent_age_15_49.csv&quot;))
+life_expectancy &lt;- read_csv(here::here(&quot;data&quot;,&quot;life_expectancy_years.csv&quot;))
+
+# get World bank data using wbstats
+indicators &lt;- c(&quot;SP.DYN.TFRT.IN&quot;,&quot;SE.PRM.NENR&quot;, &quot;SH.DYN.MORT&quot;, &quot;NY.GDP.PCAP.KD&quot;)
+
+
+library(wbstats)
+
+worldbank_data &lt;- wb_data(country=&quot;countries_only&quot;, #countries only- no aggregates like Latin America, Europe, etc.
+                          indicator = indicators, 
+                          start_date = 1960, 
+                          end_date = 2016)
+
+# get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels,  from the World Bank API 
+countries &lt;-  wbstats::wb_cachelist$countries</code></pre>
+<pre class="r"><code>hiv_tidy &lt;- hiv %&gt;% 
+  pivot_longer(cols=&quot;1979&quot;:&quot;2011&quot;, names_to = &quot;date&quot;, values_to = &quot;hiv_prev&quot;)
+
+life_expectancy_tidy &lt;- life_expectancy %&gt;%
+  select(country, c(&quot;1960&quot;:&quot;2016&quot;)) %&gt;% 
+  pivot_longer(cols=&quot;1960&quot;:&quot;2016&quot;, names_to = &quot;date&quot;, values_to = &quot;life_exp&quot;)
+
+# Used outer join over here since we don&#39;t want to exclude any values from either data frame
+
+hiv_life_merged &lt;- merge(x = hiv_tidy, y = life_expectancy_tidy, by = c(&quot;country&quot;,&quot;date&quot;), all = TRUE)
+
+# Used outer join for hiv_life_merged and world_bank_data with key country and date. But, used left outer join between that and countries frame to exclude the countries such as Middle East etc. (this is not a country in our other frame)
+
+world_data &lt;- merge(x = merge(x = hiv_life_merged, y = worldbank_data, by = c(&quot;country&quot;,&quot;date&quot;), all = TRUE), y = countries, by = c(&quot;iso2c&quot;,&quot;iso3c&quot;), all.x = TRUE) %&gt;% filter(!is.na(region))</code></pre>
+<div id="relationship-between-hiv-prevalence-and-life-expectancy" class="section level2">
+<h2>Relationship between HIV prevalence and life expectancy</h2>
+<pre class="r"><code>world_data %&gt;% 
+  filter(date &gt;= 1979) %&gt;% 
+  ggplot(aes(x = hiv_prev, y = life_exp)) +
+  geom_smooth() +
+  labs(x = &quot;HIV Prevelance in %&quot;, y = &quot;Life Expectancy&quot;, title = &quot;There is a negative relationship between a population&#39;s \nlife expectancy and HIV prevalence&quot;) +
+  theme_economist()</code></pre>
+<p><img src="/projects/project4/index_files/figure-html/unnamed-chunk-2-1.png" width="648" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>world_data %&gt;%
+  filter(date &gt;= 1979) %&gt;% 
+  ggplot(aes(x = hiv_prev, y = life_exp)) +
+  geom_point(size = 0.2) +
+  geom_smooth() +
+  facet_wrap(~region, scales=&quot;free&quot;) +
+  labs(x = &quot;HIV Prevelance in %&quot;, y = &quot;Life Expectancy&quot;, title = &quot;The relationship is not as prevalent in developed regions\ndue to antiretroviral therapy&quot;) +
+  theme_clean()</code></pre>
+<p><img src="/projects/project4/index_files/figure-html/unnamed-chunk-2-2.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="relationship-between-fertility-rate-and-gdp-per-capita" class="section level2">
+<h2>Relationship between fertility rate and GDP per capita</h2>
+<pre class="r"><code>world_data %&gt;%
+  filter(date &gt;= 1979) %&gt;% 
+  ggplot(aes(x = NY.GDP.PCAP.KD, y = SP.DYN.TFRT.IN)) +
+  geom_smooth() +
+  labs(x = &quot;GDP Per Capita&quot;, y = &quot;Fertility Rate&quot;, title = &quot;Less developed economies tend to have higher fertility\nrates due to labour demand and lack of contreception&quot;) +
+  theme_economist()</code></pre>
+<p><img src="/projects/project4/index_files/figure-html/unnamed-chunk-3-1.png" width="648" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>world_data %&gt;%
+  filter(date &gt;= 1979) %&gt;% 
+  ggplot(aes(x = NY.GDP.PCAP.KD, y = SP.DYN.TFRT.IN)) +
+  geom_smooth() +
+  facet_wrap(~region, scales=&quot;free&quot;) +
+  labs(x = &quot;GDP Per Capita&quot;, y = &quot;Fertility Rate&quot;, title = &quot;This relationship applies less in Middle East\nand Africa since very wealthy families tend to\nhave many children&quot;) +
+  theme_clean()</code></pre>
+<p><img src="/projects/project4/index_files/figure-html/unnamed-chunk-3-2.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="regions-that-have-the-most-observations-with-missing-hiv-data" class="section level2">
+<h2>Regions that have the most observations with missing HIV data</h2>
+<pre class="r"><code>world_data %&gt;%
+  group_by(region) %&gt;% 
+  summarise(
+    countNa = sum(is.na(hiv_prev))
+  ) %&gt;% 
+  ggplot(aes(x=countNa, y=reorder(region,countNa))) +
+  geom_col() +
+  labs(x = &quot;Number of missing observations of HIV Prevelance&quot;, y=&quot;&quot;) +
+  theme_minimal()</code></pre>
+<p><img src="/projects/project4/index_files/figure-html/unnamed-chunk-4-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="how-has-mortality-rate-for-under-5-changed-by-region" class="section level2">
+<h2>How has mortality rate for under 5 changed by region?</h2>
+<pre class="r"><code>world_data %&gt;% 
+  filter(date &gt;= 1979 &amp; !is.na(SH.DYN.MORT)) %&gt;% 
+  group_by(date, region) %&gt;% 
+  summarise(
+    mean_mortality_rate = mean(SH.DYN.MORT),
+  ) %&gt;% 
+  ggplot(aes(x = date, y = mean_mortality_rate)) +
+  geom_point() +
+  facet_wrap(~region, scales = &quot;free&quot;) +
+  labs(x = &quot;&quot;, y = &quot;Child Mortality Rate Per Mille&quot;, title = &quot;There is a clear decrease in mortality rates over time (1979-2011)\nin all regions&quot;) +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())</code></pre>
+<p><img src="/projects/project4/index_files/figure-html/unnamed-chunk-5-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="top-5-countries-that-have-seen-the-greatest-improvement-as-well-as-those-5-countries-where-mortality-rates-have-had-the-least-improvement-or-even-deterioration" class="section level2">
+<h2>Top 5 countries that have seen the greatest improvement, as well as those 5 countries where mortality rates have had the least improvement or even deterioration</h2>
+<pre class="r"><code># Since the curves are strictly decreasing, then, the difference of max and min will give the final value minus the initial value
+differences &lt;- world_data %&gt;% 
+  filter(date &gt;= 1979 &amp; !is.na(SH.DYN.MORT)) %&gt;%
+  group_by(region, country.x) %&gt;% 
+  summarise(
+    difference = max(SH.DYN.MORT) - min(SH.DYN.MORT)
+  )
+
+for(val in unique(differences$region)){
+  print(differences %&gt;% 
+    filter(region == val) %&gt;% 
+    arrange(-difference) %&gt;% 
+    head(5))
+
+  print(differences %&gt;% 
+    filter(region == val) %&gt;% 
+    arrange(-difference) %&gt;% 
+    tail(5))
+}</code></pre>
+<pre><code>## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region              country.x   difference
+##   &lt;chr&gt;               &lt;chr&gt;            &lt;dbl&gt;
+## 1 East Asia &amp; Pacific Cambodia         176  
+## 2 East Asia &amp; Pacific Timor-Leste      172. 
+## 3 East Asia &amp; Pacific Lao PDR          160. 
+## 4 East Asia &amp; Pacific Mongolia         147. 
+## 5 East Asia &amp; Pacific Indonesia         97.6
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region              country.x         difference
+##   &lt;chr&gt;               &lt;chr&gt;                  &lt;dbl&gt;
+## 1 East Asia &amp; Pacific Brunei Darussalam       13.1
+## 2 East Asia &amp; Pacific Singapore               12.3
+## 3 East Asia &amp; Pacific New Zealand             10.8
+## 4 East Asia &amp; Pacific Australia                9.8
+## 5 East Asia &amp; Pacific Japan                    7.8
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region                country.x    difference
+##   &lt;chr&gt;                 &lt;chr&gt;             &lt;dbl&gt;
+## 1 Europe &amp; Central Asia Turkey            122  
+## 2 Europe &amp; Central Asia Uzbekistan        105. 
+## 3 Europe &amp; Central Asia Tajikistan         92.9
+## 4 Europe &amp; Central Asia Azerbaijan         84.8
+## 5 Europe &amp; Central Asia Turkmenistan       82  
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region                country.x   difference
+##   &lt;chr&gt;                 &lt;chr&gt;            &lt;dbl&gt;
+## 1 Europe &amp; Central Asia Finland           6.80
+## 2 Europe &amp; Central Asia Switzerland       6.6 
+## 3 Europe &amp; Central Asia Monaco            6.30
+## 4 Europe &amp; Central Asia Denmark           6.2 
+## 5 Europe &amp; Central Asia Sweden            5.90
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region                    country.x   difference
+##   &lt;chr&gt;                     &lt;chr&gt;            &lt;dbl&gt;
+## 1 Latin America &amp; Caribbean Bolivia          144. 
+## 2 Latin America &amp; Caribbean Haiti            138. 
+## 3 Latin America &amp; Caribbean Peru             114  
+## 4 Latin America &amp; Caribbean Guatemala         99.1
+## 5 Latin America &amp; Caribbean El Salvador       97.7
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region                    country.x           difference
+##   &lt;chr&gt;                     &lt;chr&gt;                    &lt;dbl&gt;
+## 1 Latin America &amp; Caribbean St. Lucia                16.5 
+## 2 Latin America &amp; Caribbean Bahamas, The             16.4 
+## 3 Latin America &amp; Caribbean Dominica                 16.2 
+## 4 Latin America &amp; Caribbean Barbados                 14.9 
+## 5 Latin America &amp; Caribbean Antigua and Barbuda       9.80
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region                     country.x        difference
+##   &lt;chr&gt;                      &lt;chr&gt;                 &lt;dbl&gt;
+## 1 Middle East &amp; North Africa Yemen, Rep.            165.
+## 2 Middle East &amp; North Africa Egypt, Arab Rep.       155.
+## 3 Middle East &amp; North Africa Algeria                138.
+## 4 Middle East &amp; North Africa Morocco                115.
+## 5 Middle East &amp; North Africa Oman                   109.
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region                     country.x difference
+##   &lt;chr&gt;                      &lt;chr&gt;          &lt;dbl&gt;
+## 1 Middle East &amp; North Africa Qatar           30.5
+## 2 Middle East &amp; North Africa Kuwait          30.4
+## 3 Middle East &amp; North Africa Bahrain         27.1
+## 4 Middle East &amp; North Africa Israel          15.3
+## 5 Middle East &amp; North Africa Malta           10.8
+## # A tibble: 2 x 3
+## # Groups:   region [1]
+##   region        country.x     difference
+##   &lt;chr&gt;         &lt;chr&gt;              &lt;dbl&gt;
+## 1 North America United States       8.90
+## 2 North America Canada              8.1 
+## # A tibble: 2 x 3
+## # Groups:   region [1]
+##   region        country.x     difference
+##   &lt;chr&gt;         &lt;chr&gt;              &lt;dbl&gt;
+## 1 North America United States       8.90
+## 2 North America Canada              8.1 
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region     country.x   difference
+##   &lt;chr&gt;      &lt;chr&gt;            &lt;dbl&gt;
+## 1 South Asia Afghanistan       180.
+## 2 South Asia Nepal             180.
+## 3 South Asia Bhutan            170.
+## 4 South Asia Bangladesh        167.
+## 5 South Asia Maldives          149.
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region     country.x  difference
+##   &lt;chr&gt;      &lt;chr&gt;           &lt;dbl&gt;
+## 1 South Asia Bangladesh      167. 
+## 2 South Asia Maldives        149. 
+## 3 South Asia India           132. 
+## 4 South Asia Pakistan         93. 
+## 5 South Asia Sri Lanka        41.6
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region             country.x   difference
+##   &lt;chr&gt;              &lt;chr&gt;            &lt;dbl&gt;
+## 1 Sub-Saharan Africa Niger             247.
+## 2 Sub-Saharan Africa Rwanda            237.
+## 3 Sub-Saharan Africa Malawi            214.
+## 4 Sub-Saharan Africa Mali              203.
+## 5 Sub-Saharan Africa South Sudan       194.
+## # A tibble: 5 x 3
+## # Groups:   region [1]
+##   region             country.x  difference
+##   &lt;chr&gt;              &lt;chr&gt;           &lt;dbl&gt;
+## 1 Sub-Saharan Africa Zimbabwe         50.5
+## 2 Sub-Saharan Africa Lesotho          44.8
+## 3 Sub-Saharan Africa Botswana         42.5
+## 4 Sub-Saharan Africa Mauritius        29.4
+## 5 Sub-Saharan Africa Seychelles       20.1</code></pre>
+</div>
+<div id="relationship-between-primary-school-enrollment-and-fertility-rate" class="section level2">
+<h2>Relationship between primary school enrollment and fertility rate</h2>
+<pre class="r"><code>world_data %&gt;%
+  filter(date &gt;= 1979) %&gt;% 
+  ggplot(aes(SE.PRM.NENR, SP.DYN.TFRT.IN)) +
+  geom_smooth() +
+  labs(x = &quot;Primary School Enrollment&quot;, y = &quot;Fertility rate&quot;, title = &quot;Increased fertility rate can be associated with lower primary\nschool enrollment&quot;) +
+  theme_clean()</code></pre>
+<p><img src="/projects/project4/index_files/figure-html/unnamed-chunk-7-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+</div>

@@ -1,0 +1,214 @@
+---
+title: 'HR Analytics'
+author: "Karim Abi Fadel"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: show
+    highlight: zenburn
+    number_sections: yes
+    theme: flatly
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+```{r, setup, echo=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+
+```{r load-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(lubridate)
+library(fivethirtyeight)
+library(here)
+library(skimr)
+library(janitor)
+library(vroom)
+library(tidyquant)
+library(rvest)    # scrape websites
+library(purrr)  
+library(lubridate) #to handle dates
+library(scales)
+```
+
+
+# IBM HR Analytics
+
+
+A data set on Human Resoruce Analytics is analysed in this project. The [IBM HR Analytics Employee Attrition & Performance data set](https://www.kaggle.com/pavansubhasht/ibm-hr-analytics-attrition-dataset) is a fictional data set created by IBM data scientists.  Among other things, the data set includes employees' income, their distance from work, their position in the company, their level of education, etc.
+
+```{r}
+
+hr_dataset <- read_csv(here::here("data", "datasets_1067_1925_WA_Fn-UseC_-HR-Employee-Attrition.csv"))
+
+```
+
+The data set is cleaned.
+```{r}
+
+hr_cleaned <- hr_dataset %>% 
+  clean_names() %>% 
+  mutate(
+    education = case_when(
+      education == 1 ~ "Below College",
+      education == 2 ~ "College",
+      education == 3 ~ "Bachelor",
+      education == 4 ~ "Master",
+      education == 5 ~ "Doctor"
+    ),
+    environment_satisfaction = case_when(
+      environment_satisfaction == 1 ~ "Low",
+      environment_satisfaction == 2 ~ "Medium",
+      environment_satisfaction == 3 ~ "High",
+      environment_satisfaction == 4 ~ "Very High"
+    ),
+    job_satisfaction = case_when(
+      job_satisfaction == 1 ~ "Low",
+      job_satisfaction == 2 ~ "Medium",
+      job_satisfaction == 3 ~ "High",
+      job_satisfaction == 4 ~ "Very High"
+    ),
+    performance_rating = case_when(
+      performance_rating == 1 ~ "Low",
+      performance_rating == 2 ~ "Good",
+      performance_rating == 3 ~ "Excellent",
+      performance_rating == 4 ~ "Outstanding"
+    ),
+    work_life_balance = case_when(
+      work_life_balance == 1 ~ "Bad",
+      work_life_balance == 2 ~ "Good",
+      work_life_balance == 3 ~ "Better",
+      work_life_balance == 4 ~ "Best"
+    )
+  ) %>% 
+  select(age, attrition, daily_rate, department,
+         distance_from_home, education,
+         gender, job_role,environment_satisfaction,
+         job_satisfaction, marital_status,
+         monthly_income, num_companies_worked, percent_salary_hike,
+         performance_rating, total_working_years,
+         work_life_balance, years_at_company,
+         years_since_last_promotion)
+
+```
+
+Let's start analysing the data!
+
+## How often do people leave the company (`attrition`)
+```{r}
+
+hr_cleaned %>% 
+  filter(attrition == "Yes") %>% 
+  count() / nrow(hr_cleaned)
+
+```
+Attrition measures the rate or number of employees lost over a period of time that are not replaced. The company in the dataset has an attrition rate of 16.1%.
+
+
+## How are `age`, `years_at_company`, `monthly_income` and `years_since_last_promotion` distributed? Let's observe which of these variables is closer to Normal.
+```{r}
+ggplot(hr_cleaned, aes(x=age)) + 
+  geom_density() +
+  labs(title = "Age density plot", x = "Age", y = "Density") +
+  theme_economist()
+
+ggplot(hr_cleaned, aes(x=years_at_company)) + 
+  geom_density() +
+  labs(title = "Years at company density plot", x = "Years at company", y = "Density") +
+  theme_economist()
+
+ggplot(hr_cleaned, aes(x=monthly_income)) + 
+  geom_density() +
+  labs(title = "Monthly income density plot", x = "Monthly income", y = "Density") +
+  theme_economist()
+
+ggplot(hr_cleaned, aes(x=years_since_last_promotion)) +
+  geom_density() +
+  labs(title = "Years since last promotion density plot", x = "Years since last promotion", y = "Density") +
+  theme_economist()
+
+```
+From the above plots, it is clear that none of the graphs follow a perfectly normal distribution, as there is some skew to each of them. Out of all plots, the Age graph is the closest to the bell shaped normal distribution.
+
+
+## How are `job_satisfaction` and `work_life_balance` distributed?
+```{r}
+# Sorting the rankings in increasing order
+hr_cleaned$job_satisfaction <- 
+  factor(
+    hr_cleaned$job_satisfaction,
+    levels = c("Low", "Medium", "High", "Very High")
+  )
+
+hr_cleaned$work_life_balance <-
+  factor(
+    hr_cleaned$work_life_balance,
+    levels = c("Bad", "Good", "Better", "Best")
+  )
+
+ggplot(hr_cleaned, aes(x=job_satisfaction , y = (..count..)/sum(..count..))) + 
+  geom_bar() + labs(title = "Job Satisfaction Distribution", x = "Job Satisfaction", y = "Percentage of Total")
+  
+ggplot(hr_cleaned, aes(x=work_life_balance , y = (..count..)/sum(..count..))) + 
+  geom_bar() + labs(title = "Work-life Balance Distribution", x = "Work-life Balance", y = "Percentage of Total")
+```
+From the Job Satisfaction bar chart, it is clear the employees of the firm have an overall positive feeling about their work environment. Over 60% reported a high (30%) or very high (roughly 33%) job satisfaction, while less than 40% reported a low or medium satisfaction. One factor that may cause this is the work life balance at the firm, as seen in the 2nd bar chart. An overwhelmingly low % of employees reported a bad work life balance (roughly 7%) while around 61% reported "better" and 10% reported best.
+
+
+## Let's look at a box plot of income vs job role.
+```{r}
+ggplot(hr_cleaned, aes(y = reorder(job_role, monthly_income), x = monthly_income)) +
+  geom_boxplot() + 
+  labs(title = "Managers and research directors tend to earn the most", subtitle = "Monthly income vs Job role", x = "Monthly income", y = "") +
+  theme_light()
+```
+
+
+## Let's look at the distribution of income by education level.
+```{r}
+
+hr_cleaned$education <-
+  factor(
+   hr_cleaned$education,
+   levels = c("Below College", "College", "Bachelor", "Master", "Doctor")
+  )
+
+ggplot(hr_cleaned, aes(x = monthly_income)) +
+  geom_density() +
+  facet_wrap(~education) +
+  labs(title = "Income tends to increase with educational level", x = "Income", y = "Density") +
+  theme_economist_white() +
+  theme_tq()
+
+```
+
+## Income vs age across job roles
+```{r}
+ggplot(hr_cleaned, aes(x = age, y = monthly_income)) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~job_role) +
+  labs(title = "Growth of income depends on profession", subtitle = "Income vs age across job roles", x = "Age", y = "Monthly income") +
+  theme_tq()
+```
+
+

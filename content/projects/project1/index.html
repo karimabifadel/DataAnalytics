@@ -1,0 +1,177 @@
+---
+title: 'Financial Returns'
+author: "Karim Abi Fadel"
+date: "2020-10-06"
+output:
+  html_document:
+    code_folding: show
+    highlight: zenburn
+    number_sections: yes
+    theme: flatly
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+
+
+<div id="returns-of-financial-stocks" class="section level1">
+<h1>Returns of financial stocks</h1>
+<p>Historical data of stock prices is to used calculate returns, and examine the distribution of returns.</p>
+<pre class="r"><code>nyse &lt;- read_csv(here::here(&quot;data&quot;,&quot;nyse.csv&quot;))</code></pre>
+<div id="the-table-and-bar-plot-show-the-number-of-companies-per-sector-in-descending-order" class="section level2">
+<h2>The table and bar plot show the number of companies per sector, in descending order</h2>
+<pre class="r"><code>companies_sector &lt;- nyse %&gt;%
+  group_by(sector) %&gt;%
+  count() %&gt;%
+  arrange(desc(n))
+
+companies_sector</code></pre>
+<pre><code>## # A tibble: 12 x 2
+## # Groups:   sector [12]
+##    sector                    n
+##    &lt;chr&gt;                 &lt;int&gt;
+##  1 Finance                  97
+##  2 Consumer Services        79
+##  3 Public Utilities         60
+##  4 Capital Goods            45
+##  5 Health Care              45
+##  6 Energy                   42
+##  7 Technology               40
+##  8 Basic Industries         39
+##  9 Consumer Non-Durables    31
+## 10 Miscellaneous            12
+## 11 Transportation           10
+## 12 Consumer Durables         8</code></pre>
+<pre class="r"><code>ggplot(companies_sector, aes(x = n, y = reorder(sector, n))) +
+  geom_col() + 
+  labs(title = &quot;The finance sector takes the lead&quot;,
+       subtitle = &quot;Number of companies per sector in NYSE&quot;,
+       x = &quot;Number of Companies&quot;,
+       y = &quot;&quot;) +
+  theme_economist()</code></pre>
+<p><img src="/projects/project1/index_files/figure-html/companies_per_sector-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="next-the-dow-jones-industrial-aveareg-djia-stocks-and-their-ticker-symbols-are-downloaded.-besides-the-thirty-stocks-that-make-up-the-djia-spy-which-is-an-sp500-etf-is-downloaded.-lets-have-some-fun-with-the-new-data." class="section level2">
+<h2>Next, the <a href="https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average">Dow Jones Industrial Aveareg (DJIA)</a> stocks and their ticker symbols are downloaded. Besides the thirty stocks that make up the DJIA, <code>SPY</code> which is an SP500 ETF is downloaded. Let’s have some fun with the new data.</h2>
+<pre class="r"><code>djia_url &lt;- &quot;https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average&quot;
+
+#get tables that exist on URL
+tables &lt;- djia_url %&gt;% 
+  read_html() %&gt;% 
+  html_nodes(css=&quot;table&quot;)
+
+
+# parse HTML tables into a dataframe called djia. 
+# Use purr::map() to create a list of all tables in URL
+djia &lt;- map(tables, . %&gt;% 
+               html_table(fill=TRUE)%&gt;% 
+               clean_names())
+
+
+# constituents
+table1 &lt;- djia[[2]] %&gt;% # the second table on the page contains the ticker symbols
+  mutate(date_added = ymd(date_added),
+         
+         # if a stock is listed on NYSE, its symbol is, e.g., NYSE: MMM
+         # We will get prices from yahoo finance which requires just the ticker
+         
+         # if symbol contains &quot;NYSE*&quot;, the * being a wildcard
+         # then we jsut drop the first 6 characters in that string
+         ticker = ifelse(str_detect(symbol, &quot;NYSE*&quot;),
+                          str_sub(symbol,7,11),
+                          symbol)
+         )
+
+# we need a vector of strings with just the 30 tickers + SPY
+tickers &lt;- table1 %&gt;% 
+  select(ticker) %&gt;% 
+  pull() %&gt;% # pull() gets them as a sting of characters
+  c(&quot;SPY&quot;) # and lets us add SPY, the SP500 ETF</code></pre>
+<pre class="r"><code>myStocks &lt;- tickers %&gt;% 
+  tq_get(get  = &quot;stock.prices&quot;,
+         from = &quot;2000-01-01&quot;,
+         to   = &quot;2020-08-31&quot;) %&gt;%
+  group_by(symbol)</code></pre>
+<pre class="r"><code>#calculate daily returns
+myStocks_returns_daily &lt;- myStocks %&gt;%
+  tq_transmute(select     = adjusted, 
+               mutate_fun = periodReturn, 
+               period     = &quot;daily&quot;, 
+               type       = &quot;log&quot;,
+               col_rename = &quot;daily_returns&quot;,
+               cols = c(nested.col))  
+
+#calculate monthly  returns
+myStocks_returns_monthly &lt;- myStocks %&gt;%
+  tq_transmute(select     = adjusted, 
+               mutate_fun = periodReturn, 
+               period     = &quot;monthly&quot;, 
+               type       = &quot;arithmetic&quot;,
+               col_rename = &quot;monthly_returns&quot;,
+               cols = c(nested.col)) 
+
+#calculate yearly returns
+myStocks_returns_annual &lt;- myStocks %&gt;%
+  group_by(symbol) %&gt;%
+  tq_transmute(select     = adjusted, 
+               mutate_fun = periodReturn, 
+               period     = &quot;yearly&quot;, 
+               type       = &quot;arithmetic&quot;,
+               col_rename = &quot;yearly_returns&quot;,
+               cols = c(nested.col))</code></pre>
+<pre class="r"><code># Monthly returns since 2017-01-01 for each of the stocks and `SPY`; min, max, median, mean, SD.
+summary_of_myStocks_returns_monthly &lt;- myStocks_returns_monthly %&gt;%
+  filter(date &gt;= as.Date(&quot;2017-01-01&quot;)) %&gt;% 
+  group_by(symbol) %&gt;%
+  summarise(min = min(monthly_returns),
+            median = median(monthly_returns),
+            max = max(monthly_returns),
+            mean = mean(monthly_returns),
+            std = sqrt(var(monthly_returns)))
+
+summary_of_myStocks_returns_monthly</code></pre>
+<pre><code>## # A tibble: 31 x 6
+##    symbol    min   median    max      mean    std
+##    &lt;chr&gt;   &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;
+##  1 AAPL   -0.181  0.0513  0.200   0.0387   0.0873
+##  2 AMGN   -0.104  0.0235  0.180   0.0171   0.0664
+##  3 AXP    -0.221  0.0150  0.0988  0.0109   0.0639
+##  4 BA     -0.458  0.0250  0.257   0.0124   0.120 
+##  5 CAT    -0.199  0.0318  0.138   0.0151   0.0742
+##  6 CRM    -0.155  0.0403  0.391   0.0350   0.0850
+##  7 CSCO   -0.155  0.0185  0.130   0.0125   0.0673
+##  8 CVX    -0.224  0.00173 0.270  -0.000926 0.0748
+##  9 DIS    -0.179 -0.00208 0.234   0.00967  0.0750
+## 10 DOW    -0.276  0.0456  0.255   0.00898  0.128 
+## # ... with 21 more rows</code></pre>
+</div>
+<div id="here-you-can-find-a-density-plot-of-the-monthly-returns-of-each-of-the-stocks" class="section level2">
+<h2>Here, you can find a density plot of the monthly returns of each of the stocks</h2>
+<pre class="r"><code>myStocks_returns_monthly %&gt;% 
+  filter(symbol != &quot;SPY&quot;) %&gt;%
+  ggplot(aes(x = monthly_returns)) +
+  geom_density() + 
+  labs(title = &quot;Density plot of monthly returns&quot;, x = &quot;Stock&quot;, y = &quot;Monthly returns&quot;) +
+  facet_wrap(~symbol) +
+  theme_gdocs()</code></pre>
+<p><img src="/projects/project1/index_files/figure-html/density_monthly_returns-1.png" width="648" style="display: block; margin: auto;" /></p>
+<blockquote>
+<p>From the plot, we can infer that firms with “wider” curves show more volatility. With that in mind, Coca Cola looks like the least risky firm in the data set as its thin peak represents a smaller deviation in stock movements. On the other hand, Dow Inc comes across as the riskiest stock in the dataset due to its wide peak representing a large deviation in stock prices and thus high volatility.</p>
+</blockquote>
+<pre class="r"><code>summary_of_myStocks_returns_monthly %&gt;% 
+  filter(symbol != &quot;SPY&quot;) %&gt;%
+  ggplot(aes(std, mean, label = symbol)) +
+  geom_point() + 
+  ggrepel::geom_text_repel() +
+  labs(title = &quot;KO and DOW are at the extremeties of risk as predicted&quot;, subtitle = &quot;Expected monthly returns as a function of standard deviation&quot;, x = &quot;Standard Deviation&quot;, y = &quot;Expected monthly returns&quot;)+
+  theme_tq()</code></pre>
+<p><img src="/projects/project1/index_files/figure-html/risk_return_plot-1.png" width="648" style="display: block; margin: auto;" /></p>
+<blockquote>
+<p>We can observe that there is a positive correlation between risk and expected monthly returns; higher risk stocks tend to give higher returns. There are outliers, notably DOW which shows the highest risk between the stocks but relatively low returns.</p>
+</blockquote>
+</div>
+</div>

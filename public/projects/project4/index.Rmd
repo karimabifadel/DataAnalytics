@@ -1,0 +1,189 @@
+---
+title: "World Data"
+author: "Karim Abi Fadel"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    code_folding: show
+---
+
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+
+```{r load-libraries, include=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(lubridate)
+library(here)
+library(skimr)
+library(janitor)
+library(httr)
+library(readxl)
+library(vroom)
+library(infer)
+```
+
+
+# World Data
+
+```{r, get_data, cache=TRUE}
+
+# load gapminder HIV data
+hiv <- read_csv(here::here("data","adults_with_hiv_percent_age_15_49.csv"))
+life_expectancy <- read_csv(here::here("data","life_expectancy_years.csv"))
+
+# get World bank data using wbstats
+indicators <- c("SP.DYN.TFRT.IN","SE.PRM.NENR", "SH.DYN.MORT", "NY.GDP.PCAP.KD")
+
+
+library(wbstats)
+
+worldbank_data <- wb_data(country="countries_only", #countries only- no aggregates like Latin America, Europe, etc.
+                          indicator = indicators, 
+                          start_date = 1960, 
+                          end_date = 2016)
+
+# get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels,  from the World Bank API 
+countries <-  wbstats::wb_cachelist$countries
+
+```
+
+```{r}
+hiv_tidy <- hiv %>% 
+  pivot_longer(cols="1979":"2011", names_to = "date", values_to = "hiv_prev")
+
+life_expectancy_tidy <- life_expectancy %>%
+  select(country, c("1960":"2016")) %>% 
+  pivot_longer(cols="1960":"2016", names_to = "date", values_to = "life_exp")
+
+# Used outer join over here since we don't want to exclude any values from either data frame
+
+hiv_life_merged <- merge(x = hiv_tidy, y = life_expectancy_tidy, by = c("country","date"), all = TRUE)
+
+# Used outer join for hiv_life_merged and world_bank_data with key country and date. But, used left outer join between that and countries frame to exclude the countries such as Middle East etc. (this is not a country in our other frame)
+
+world_data <- merge(x = merge(x = hiv_life_merged, y = worldbank_data, by = c("country","date"), all = TRUE), y = countries, by = c("iso2c","iso3c"), all.x = TRUE) %>% filter(!is.na(region))
+```
+
+
+## Relationship between HIV prevalence and life expectancy
+```{r}
+world_data %>% 
+  filter(date >= 1979) %>% 
+  ggplot(aes(x = hiv_prev, y = life_exp)) +
+  geom_smooth() +
+  labs(x = "HIV Prevelance in %", y = "Life Expectancy", title = "There is a negative relationship between a population's \nlife expectancy and HIV prevalence") +
+  theme_economist()
+
+world_data %>%
+  filter(date >= 1979) %>% 
+  ggplot(aes(x = hiv_prev, y = life_exp)) +
+  geom_point(size = 0.2) +
+  geom_smooth() +
+  facet_wrap(~region, scales="free") +
+  labs(x = "HIV Prevelance in %", y = "Life Expectancy", title = "The relationship is not as prevalent in developed regions\ndue to antiretroviral therapy") +
+  theme_clean()
+```
+
+## Relationship between fertility rate and GDP per capita
+```{r}
+world_data %>%
+  filter(date >= 1979) %>% 
+  ggplot(aes(x = NY.GDP.PCAP.KD, y = SP.DYN.TFRT.IN)) +
+  geom_smooth() +
+  labs(x = "GDP Per Capita", y = "Fertility Rate", title = "Less developed economies tend to have higher fertility\nrates due to labour demand and lack of contreception") +
+  theme_economist()
+
+world_data %>%
+  filter(date >= 1979) %>% 
+  ggplot(aes(x = NY.GDP.PCAP.KD, y = SP.DYN.TFRT.IN)) +
+  geom_smooth() +
+  facet_wrap(~region, scales="free") +
+  labs(x = "GDP Per Capita", y = "Fertility Rate", title = "This relationship applies less in Middle East\nand Africa since very wealthy families tend to\nhave many children") +
+  theme_clean()
+```
+
+## Regions that have the most observations with missing HIV data
+```{r}
+world_data %>%
+  group_by(region) %>% 
+  summarise(
+    countNa = sum(is.na(hiv_prev))
+  ) %>% 
+  ggplot(aes(x=countNa, y=reorder(region,countNa))) +
+  geom_col() +
+  labs(x = "Number of missing observations of HIV Prevelance", y="") +
+  theme_minimal()
+  
+```
+
+## How has mortality rate for under 5 changed by region?
+```{r}
+world_data %>% 
+  filter(date >= 1979 & !is.na(SH.DYN.MORT)) %>% 
+  group_by(date, region) %>% 
+  summarise(
+    mean_mortality_rate = mean(SH.DYN.MORT),
+  ) %>% 
+  ggplot(aes(x = date, y = mean_mortality_rate)) +
+  geom_point() +
+  facet_wrap(~region, scales = "free") +
+  labs(x = "", y = "Child Mortality Rate Per Mille", title = "There is a clear decrease in mortality rates over time (1979-2011)\nin all regions") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+```
+
+## Top 5 countries that have seen the greatest improvement, as well as those 5 countries where mortality rates have had the least improvement or even deterioration
+```{r}
+# Since the curves are strictly decreasing, then, the difference of max and min will give the final value minus the initial value
+differences <- world_data %>% 
+  filter(date >= 1979 & !is.na(SH.DYN.MORT)) %>%
+  group_by(region, country.x) %>% 
+  summarise(
+    difference = max(SH.DYN.MORT) - min(SH.DYN.MORT)
+  )
+
+for(val in unique(differences$region)){
+  print(differences %>% 
+    filter(region == val) %>% 
+    arrange(-difference) %>% 
+    head(5))
+
+  print(differences %>% 
+    filter(region == val) %>% 
+    arrange(-difference) %>% 
+    tail(5))
+}
+```
+
+
+## Relationship between primary school enrollment and fertility rate
+```{r}
+world_data %>%
+  filter(date >= 1979) %>% 
+  ggplot(aes(SE.PRM.NENR, SP.DYN.TFRT.IN)) +
+  geom_smooth() +
+  labs(x = "Primary School Enrollment", y = "Fertility rate", title = "Increased fertility rate can be associated with lower primary\nschool enrollment") +
+  theme_clean()
+```

@@ -1,0 +1,277 @@
+<!DOCTYPE HTML>
+<html>
+
+    <head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<meta name="description" content="Data Analytics Website">
+	<meta name="author" content="Karim Abi Fadel">
+	<meta name="generator" content="Hugo 0.75.1" />
+	<title>Climate Change &middot; Portfolio website for Karim Abi Fadel</title>
+	<!-- Stylesheets -->
+	
+	<link rel="stylesheet" href="/css/main.css"/>
+	
+	
+
+	
+
+	<!-- Custom Fonts -->
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+	
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	
+
+	<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+	<script src="js/ie/html5shiv.js"></script>
+	<script src="js/ie/html5shiv.jsrespond.min.js"></script>
+	<![endif]-->
+</head>
+
+    <body>
+
+    <!-- Wrapper -->
+        <div id="wrapper">
+
+            <!-- Header -->
+    <header id="header" class="alt">
+        <a href="/" class="logo"><strong>Karim Abi Fadel</strong> <span></span></a>
+        <nav>
+            <a href="#menu">Menu</a>
+        </nav>
+    </header>
+
+<!-- Menu -->
+    <nav id="menu">
+        <ul class="links">
+            
+                <li><a href="/">Home</a></li>
+            
+
+        </ul>
+        <ul class="actions vertical">
+            
+            
+        </ul>
+    </nav>
+
+        <!-- Main -->
+            <div id="main" class="alt">
+
+                
+                    <section id="one">
+                        <div class="inner">
+                            <header class="major">
+                                <h1>Climate Change</h1>
+                            </header>
+                            
+                            
+
+
+<div id="climate-change-and-temperature-anomalies" class="section level1">
+<h1>Climate change and temperature anomalies</h1>
+<p>In order to study climate change, we can find data on the <em>Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies</em> in the Northern Hemisphere at <a href="https://data.giss.nasa.gov/gistemp">NASA’s Goddard Institute for Space Studies</a>. The <a href="https://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts+dSST.txt">tabular data of temperature anomalies can be found here</a></p>
+<pre class="r"><code>weather &lt;- 
+  read_csv(&quot;https://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts+dSST.csv&quot;, 
+           skip = 1, 
+           na = &quot;***&quot;)
+
+weather</code></pre>
+<pre><code>## # A tibble: 140 x 19
+##     Year   Jan    Feb    Mar   Apr   May   Jun   Jul   Aug   Sep   Oct   Nov
+##    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1  1880 -0.54 -0.38  -0.26  -0.37 -0.11 -0.22 -0.23 -0.24 -0.26 -0.32 -0.37
+##  2  1881 -0.19 -0.25   0.02  -0.02 -0.06 -0.36 -0.06 -0.03 -0.23 -0.4  -0.42
+##  3  1882  0.22  0.22   0     -0.36 -0.32 -0.38 -0.37 -0.14 -0.17 -0.53 -0.32
+##  4  1883 -0.59 -0.67  -0.16  -0.27 -0.32 -0.26 -0.09 -0.26 -0.33 -0.21 -0.4 
+##  5  1884 -0.23 -0.11  -0.65  -0.62 -0.42 -0.52 -0.48 -0.5  -0.45 -0.41 -0.48
+##  6  1885 -1    -0.37  -0.21  -0.53 -0.55 -0.47 -0.39 -0.44 -0.32 -0.3  -0.28
+##  7  1886 -0.68 -0.68  -0.570 -0.34 -0.34 -0.43 -0.2  -0.47 -0.34 -0.31 -0.45
+##  8  1887 -1.07 -0.580 -0.36  -0.42 -0.27 -0.2  -0.23 -0.52 -0.17 -0.4  -0.19
+##  9  1888 -0.53 -0.59  -0.580 -0.24 -0.16 -0.04  0.04 -0.19 -0.12  0.04 -0.03
+## 10  1889 -0.31  0.35   0.07   0.15 -0.05 -0.12 -0.1  -0.16 -0.26 -0.34 -0.61
+## # ... with 130 more rows, and 7 more variables: Dec &lt;dbl&gt;, `J-D` &lt;dbl&gt;,
+## #   `D-N` &lt;dbl&gt;, DJF &lt;dbl&gt;, MAM &lt;dbl&gt;, JJA &lt;dbl&gt;, SON &lt;dbl&gt;</code></pre>
+<div id="reframing-the-data-for-smoother-analysis" class="section level2">
+<h2>Reframing the data for smoother analysis</h2>
+<pre class="r"><code>tidyweather &lt;- weather %&gt;% 
+  select(-c(&quot;J-D&quot;,&quot;D-N&quot;,&quot;DJF&quot;,&quot;MAM&quot;,&quot;JJA&quot;,&quot;SON&quot;)) %&gt;% 
+  pivot_longer(cols=&quot;Jan&quot;:&quot;Dec&quot;, names_to = &quot;Month&quot;, values_to = &quot;delta&quot;)
+
+tidyweather</code></pre>
+<pre><code>## # A tibble: 1,680 x 3
+##     Year Month delta
+##    &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;
+##  1  1880 Jan   -0.54
+##  2  1880 Feb   -0.38
+##  3  1880 Mar   -0.26
+##  4  1880 Apr   -0.37
+##  5  1880 May   -0.11
+##  6  1880 Jun   -0.22
+##  7  1880 Jul   -0.23
+##  8  1880 Aug   -0.24
+##  9  1880 Sep   -0.26
+## 10  1880 Oct   -0.32
+## # ... with 1,670 more rows</code></pre>
+</div>
+<div id="plotting-information" class="section level2">
+<h2>Plotting Information</h2>
+<pre class="r"><code>tidyweather &lt;- tidyweather %&gt;%
+  mutate(date = ymd(paste(as.character(Year), Month, &quot;1&quot;)),
+         month = month(date, label=TRUE),
+         year = year(date))
+
+ggplot(tidyweather, aes(x=date, y = delta))+
+  geom_point()+
+  geom_smooth(color=&quot;red&quot;) +
+  theme_bw() +
+  labs (
+    title = &quot;Climate change is real!&quot;,
+    subtitle = &quot;The graph shows a growing deviation from the 1951 to 1981 reference period&quot;,
+    x = &quot;Date&quot;,
+    y = &quot;Delta&quot;
+  ) +
+  theme_economist()</code></pre>
+<p><img src="/projects/project3/index_files/figure-html/scatter_plot-1.png" width="648" style="display: block; margin: auto;" /></p>
+<p><img src="/projects/project3/index_files/figure-html/facet_wrap-1.png" width="648" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>comparison &lt;- tidyweather %&gt;% 
+  filter(Year&gt;= 1881) %&gt;%     #remove years prior to 1881
+  #create new variable &#39;interval&#39;, and assign values based on criteria below:
+  mutate(interval = case_when(
+    Year %in% c(1881:1920) ~ &quot;1881-1920&quot;,
+    Year %in% c(1921:1950) ~ &quot;1921-1950&quot;,
+    Year %in% c(1951:1980) ~ &quot;1951-1980&quot;,
+    Year %in% c(1981:2010) ~ &quot;1981-2010&quot;,
+    TRUE ~ &quot;2011-present&quot;
+  ))</code></pre>
+<pre class="r"><code>ggplot(comparison, aes(x=delta, fill=interval))+
+  geom_density(alpha=0.2) +   #density plot with tranparency set to 20%
+  theme_bw() +                #theme
+  labs (
+    title = &quot;Density Plot for Monthly Temperature Anomalies&quot;,
+    y     = &quot;Density&quot;         #changing y-axis label to sentence case
+  )</code></pre>
+<p><img src="/projects/project3/index_files/figure-html/density_plot-1.png" width="648" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#creating yearly averages
+average_annual_anomaly &lt;- tidyweather %&gt;% 
+  group_by(Year) %&gt;%   #grouping data by Year
+  
+  # creating summaries for mean delta 
+  # use `na.rm=TRUE` to eliminate NA (not available) values 
+  summarise(annual_average_delta = mean(delta, na.rm=TRUE)) 
+
+#plotting the data:
+ggplot(average_annual_anomaly, aes(x=Year, y= annual_average_delta))+
+  geom_point()+
+  
+  #Fit the best fit line, using LOESS method
+  geom_smooth() +
+  
+  #change to theme_bw() to have white background + black frame around plot
+  theme_bw() +
+  labs (
+    title = &quot;Climate change has been accelerating exponentially since 1960&quot;,
+    y     = &quot;Average Annual Delta&quot;
+  ) +
+  theme_clean()</code></pre>
+<p><img src="/projects/project3/index_files/figure-html/averaging-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="confidence-interval-for-delta" class="section level2">
+<h2>Confidence Interval for <code>delta</code></h2>
+<p><a href="https://earthobservatory.nasa.gov/world-of-change/decadaltemp.php">NASA points out on their website</a> that</p>
+<blockquote>
+<p>A one-degree global change is significant because it takes a vast amount of heat to warm all the oceans, atmosphere, and land by that much. In the past, a one- to two-degree drop was all it took to plunge the Earth into the Little Ice Age.</p>
+</blockquote>
+<pre class="r"><code># use formula to construct confidence interval
+
+formula_ci &lt;- comparison %&gt;% 
+  filter(interval == &quot;2011-present&quot; &amp; !is.na(delta)) %&gt;% 
+  summarise(mean_delta = mean(delta),
+            sd_delta = sd(delta),
+            count = n(),
+            # get t-critical value with (n-1) degrees of freedom
+            t_critical = qt(0.975, count-1),
+            se_delta = sd(delta)/sqrt(count),
+            margin_of_error = t_critical * se_delta,
+            delta_low = mean_delta - margin_of_error,
+            delta_high = mean_delta + margin_of_error
+  ) 
+
+#print out formula_CI
+formula_ci</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   mean_delta sd_delta count t_critical se_delta margin_of_error delta_low
+##        &lt;dbl&gt;    &lt;dbl&gt; &lt;int&gt;      &lt;dbl&gt;    &lt;dbl&gt;           &lt;dbl&gt;     &lt;dbl&gt;
+## 1      0.966    0.262   103       1.98   0.0259          0.0513     0.915
+## # ... with 1 more variable: delta_high &lt;dbl&gt;</code></pre>
+<pre class="r"><code># use the infer package to construct a 95% confidence interval for delta
+
+set.seed(24)
+comparison %&gt;% 
+  filter(interval == &quot;2011-present&quot; &amp; !is.na(delta)) %&gt;%
+  specify(response = delta) %&gt;% 
+  generate(reps = 1000) %&gt;% 
+  calculate(stat = &quot;mean&quot;) %&gt;% 
+  visualise()</code></pre>
+<p><img src="/projects/project3/index_files/figure-html/calculate_CI_using_bootstrap-1.png" width="648" style="display: block; margin: auto;" /></p>
+<blockquote>
+<p>The above graph shows that when repeated 1000 times, the data shows an almost normal distribution. and the mean is relatively close to the formula calculation at around 0.96. The more times the test is repeated, the closer the graph moves towards a normal distribution and the closer the mean moves towards the formula calculated value.</p>
+</blockquote>
+</div>
+</div>
+
+                        </div>
+                    </section>
+            <!-- Disqus Inject -->
+                
+            </div>
+            
+        <!-- Footer -->
+            
+                <!-- Footer -->
+    <footer id="footer">
+        <div class="inner">
+            <ul class="icons">
+                
+                    <li><a href="https://www.instagram.com/karimabifadel" class="icon alt fa-instagram" target="_blank"><span class="label">Instagram</span></a></li>
+                
+                    <li><a href="https://www.github.com/karimabifadel" class="icon alt fa-github" target="_blank"><span class="label">GitHub</span></a></li>
+                
+                    <li><a href="https://www.linkedin.com/in/karim-abi-fadel" class="icon alt fa-linkedin" target="_blank"><span class="label">LinkedIn</span></a></li>
+                
+            </ul>
+            <ul class="copyright">
+                <li>&copy; Karim Abi Fadel</li>
+                
+            </ul>
+        </div>
+    </footer>
+
+            
+        </div>
+
+    <!-- Scripts -->
+        <!-- Scripts -->
+    <!-- jQuery -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jquery.scrolly.min.js"></script>
+    <script src="/js/jquery.scrollex.min.js"></script>
+    <script src="/js/skel.min.js"></script>
+    <script src="/js/util.js"></script>
+
+    
+
+    <!-- Main JS -->
+    <script src="/js/main.js"></script>
+
+    
+
+    
+
+    </body>
+</html>

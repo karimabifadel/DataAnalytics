@@ -1,0 +1,266 @@
+<!DOCTYPE HTML>
+<html>
+
+    <head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<meta name="description" content="Data Analytics Website">
+	<meta name="author" content="Karim Abi Fadel">
+	<meta name="generator" content="Hugo 0.75.1" />
+	<title>HR Analytics &middot; Portfolio website for Karim Abi Fadel</title>
+	<!-- Stylesheets -->
+	
+	<link rel="stylesheet" href="/css/main.css"/>
+	
+	
+
+	
+
+	<!-- Custom Fonts -->
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+	
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	
+
+	<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+	<script src="js/ie/html5shiv.js"></script>
+	<script src="js/ie/html5shiv.jsrespond.min.js"></script>
+	<![endif]-->
+</head>
+
+    <body>
+
+    <!-- Wrapper -->
+        <div id="wrapper">
+
+            <!-- Header -->
+    <header id="header" class="alt">
+        <a href="/" class="logo"><strong>Karim Abi Fadel</strong> <span></span></a>
+        <nav>
+            <a href="#menu">Menu</a>
+        </nav>
+    </header>
+
+<!-- Menu -->
+    <nav id="menu">
+        <ul class="links">
+            
+                <li><a href="/">Home</a></li>
+            
+
+        </ul>
+        <ul class="actions vertical">
+            
+            
+        </ul>
+    </nav>
+
+        <!-- Main -->
+            <div id="main" class="alt">
+
+                
+                    <section id="one">
+                        <div class="inner">
+                            <header class="major">
+                                <h1>HR Analytics</h1>
+                            </header>
+                            
+                            
+
+
+<div id="ibm-hr-analytics" class="section level1">
+<h1>IBM HR Analytics</h1>
+<p>A data set on Human Resoruce Analytics is analysed in this project. The <a href="https://www.kaggle.com/pavansubhasht/ibm-hr-analytics-attrition-dataset">IBM HR Analytics Employee Attrition &amp; Performance data set</a> is a fictional data set created by IBM data scientists. Among other things, the data set includes employees’ income, their distance from work, their position in the company, their level of education, etc.</p>
+<pre class="r"><code>hr_dataset &lt;- read_csv(here::here(&quot;data&quot;, &quot;datasets_1067_1925_WA_Fn-UseC_-HR-Employee-Attrition.csv&quot;))</code></pre>
+<p>The data set is cleaned.</p>
+<pre class="r"><code>hr_cleaned &lt;- hr_dataset %&gt;% 
+  clean_names() %&gt;% 
+  mutate(
+    education = case_when(
+      education == 1 ~ &quot;Below College&quot;,
+      education == 2 ~ &quot;College&quot;,
+      education == 3 ~ &quot;Bachelor&quot;,
+      education == 4 ~ &quot;Master&quot;,
+      education == 5 ~ &quot;Doctor&quot;
+    ),
+    environment_satisfaction = case_when(
+      environment_satisfaction == 1 ~ &quot;Low&quot;,
+      environment_satisfaction == 2 ~ &quot;Medium&quot;,
+      environment_satisfaction == 3 ~ &quot;High&quot;,
+      environment_satisfaction == 4 ~ &quot;Very High&quot;
+    ),
+    job_satisfaction = case_when(
+      job_satisfaction == 1 ~ &quot;Low&quot;,
+      job_satisfaction == 2 ~ &quot;Medium&quot;,
+      job_satisfaction == 3 ~ &quot;High&quot;,
+      job_satisfaction == 4 ~ &quot;Very High&quot;
+    ),
+    performance_rating = case_when(
+      performance_rating == 1 ~ &quot;Low&quot;,
+      performance_rating == 2 ~ &quot;Good&quot;,
+      performance_rating == 3 ~ &quot;Excellent&quot;,
+      performance_rating == 4 ~ &quot;Outstanding&quot;
+    ),
+    work_life_balance = case_when(
+      work_life_balance == 1 ~ &quot;Bad&quot;,
+      work_life_balance == 2 ~ &quot;Good&quot;,
+      work_life_balance == 3 ~ &quot;Better&quot;,
+      work_life_balance == 4 ~ &quot;Best&quot;
+    )
+  ) %&gt;% 
+  select(age, attrition, daily_rate, department,
+         distance_from_home, education,
+         gender, job_role,environment_satisfaction,
+         job_satisfaction, marital_status,
+         monthly_income, num_companies_worked, percent_salary_hike,
+         performance_rating, total_working_years,
+         work_life_balance, years_at_company,
+         years_since_last_promotion)</code></pre>
+<p>Let’s start analysing the data!</p>
+<div id="how-often-do-people-leave-the-company-attrition" class="section level2">
+<h2>How often do people leave the company (<code>attrition</code>)</h2>
+<pre class="r"><code>hr_cleaned %&gt;% 
+  filter(attrition == &quot;Yes&quot;) %&gt;% 
+  count() / nrow(hr_cleaned)</code></pre>
+<pre><code>##       n
+## 1 0.161</code></pre>
+<p>Attrition measures the rate or number of employees lost over a period of time that are not replaced. The company in the dataset has an attrition rate of 16.1%.</p>
+</div>
+<div id="how-are-age-years_at_company-monthly_income-and-years_since_last_promotion-distributed-lets-observe-which-of-these-variables-is-closer-to-normal." class="section level2">
+<h2>How are <code>age</code>, <code>years_at_company</code>, <code>monthly_income</code> and <code>years_since_last_promotion</code> distributed? Let’s observe which of these variables is closer to Normal.</h2>
+<pre class="r"><code>ggplot(hr_cleaned, aes(x=age)) + 
+  geom_density() +
+  labs(title = &quot;Age density plot&quot;, x = &quot;Age&quot;, y = &quot;Density&quot;) +
+  theme_economist()</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-4-1.png" width="648" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(hr_cleaned, aes(x=years_at_company)) + 
+  geom_density() +
+  labs(title = &quot;Years at company density plot&quot;, x = &quot;Years at company&quot;, y = &quot;Density&quot;) +
+  theme_economist()</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-4-2.png" width="648" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(hr_cleaned, aes(x=monthly_income)) + 
+  geom_density() +
+  labs(title = &quot;Monthly income density plot&quot;, x = &quot;Monthly income&quot;, y = &quot;Density&quot;) +
+  theme_economist()</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-4-3.png" width="648" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(hr_cleaned, aes(x=years_since_last_promotion)) +
+  geom_density() +
+  labs(title = &quot;Years since last promotion density plot&quot;, x = &quot;Years since last promotion&quot;, y = &quot;Density&quot;) +
+  theme_economist()</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-4-4.png" width="648" style="display: block; margin: auto;" />
+From the above plots, it is clear that none of the graphs follow a perfectly normal distribution, as there is some skew to each of them. Out of all plots, the Age graph is the closest to the bell shaped normal distribution.</p>
+</div>
+<div id="how-are-job_satisfaction-and-work_life_balance-distributed" class="section level2">
+<h2>How are <code>job_satisfaction</code> and <code>work_life_balance</code> distributed?</h2>
+<pre class="r"><code># Sorting the rankings in increasing order
+hr_cleaned$job_satisfaction &lt;- 
+  factor(
+    hr_cleaned$job_satisfaction,
+    levels = c(&quot;Low&quot;, &quot;Medium&quot;, &quot;High&quot;, &quot;Very High&quot;)
+  )
+
+hr_cleaned$work_life_balance &lt;-
+  factor(
+    hr_cleaned$work_life_balance,
+    levels = c(&quot;Bad&quot;, &quot;Good&quot;, &quot;Better&quot;, &quot;Best&quot;)
+  )
+
+ggplot(hr_cleaned, aes(x=job_satisfaction , y = (..count..)/sum(..count..))) + 
+  geom_bar() + labs(title = &quot;Job Satisfaction Distribution&quot;, x = &quot;Job Satisfaction&quot;, y = &quot;Percentage of Total&quot;)</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-5-1.png" width="648" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(hr_cleaned, aes(x=work_life_balance , y = (..count..)/sum(..count..))) + 
+  geom_bar() + labs(title = &quot;Work-life Balance Distribution&quot;, x = &quot;Work-life Balance&quot;, y = &quot;Percentage of Total&quot;)</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-5-2.png" width="648" style="display: block; margin: auto;" />
+From the Job Satisfaction bar chart, it is clear the employees of the firm have an overall positive feeling about their work environment. Over 60% reported a high (30%) or very high (roughly 33%) job satisfaction, while less than 40% reported a low or medium satisfaction. One factor that may cause this is the work life balance at the firm, as seen in the 2nd bar chart. An overwhelmingly low % of employees reported a bad work life balance (roughly 7%) while around 61% reported “better” and 10% reported best.</p>
+</div>
+<div id="lets-look-at-a-box-plot-of-income-vs-job-role." class="section level2">
+<h2>Let’s look at a box plot of income vs job role.</h2>
+<pre class="r"><code>ggplot(hr_cleaned, aes(y = reorder(job_role, monthly_income), x = monthly_income)) +
+  geom_boxplot() + 
+  labs(title = &quot;Managers and research directors tend to earn the most&quot;, subtitle = &quot;Monthly income vs Job role&quot;, x = &quot;Monthly income&quot;, y = &quot;&quot;) +
+  theme_light()</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-6-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="lets-look-at-the-distribution-of-income-by-education-level." class="section level2">
+<h2>Let’s look at the distribution of income by education level.</h2>
+<pre class="r"><code>hr_cleaned$education &lt;-
+  factor(
+   hr_cleaned$education,
+   levels = c(&quot;Below College&quot;, &quot;College&quot;, &quot;Bachelor&quot;, &quot;Master&quot;, &quot;Doctor&quot;)
+  )
+
+ggplot(hr_cleaned, aes(x = monthly_income)) +
+  geom_density() +
+  facet_wrap(~education) +
+  labs(title = &quot;Income tends to increase with educational level&quot;, x = &quot;Income&quot;, y = &quot;Density&quot;) +
+  theme_economist_white() +
+  theme_tq()</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-7-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="income-vs-age-across-job-roles" class="section level2">
+<h2>Income vs age across job roles</h2>
+<pre class="r"><code>ggplot(hr_cleaned, aes(x = age, y = monthly_income)) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~job_role) +
+  labs(title = &quot;Growth of income depends on profession&quot;, subtitle = &quot;Income vs age across job roles&quot;, x = &quot;Age&quot;, y = &quot;Monthly income&quot;) +
+  theme_tq()</code></pre>
+<p><img src="/projects/project2/index_files/figure-html/unnamed-chunk-8-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+
+                        </div>
+                    </section>
+            <!-- Disqus Inject -->
+                
+            </div>
+            
+        <!-- Footer -->
+            
+                <!-- Footer -->
+    <footer id="footer">
+        <div class="inner">
+            <ul class="icons">
+                
+                    <li><a href="https://www.instagram.com/karimabifadel" class="icon alt fa-instagram" target="_blank"><span class="label">Instagram</span></a></li>
+                
+                    <li><a href="https://www.github.com/karimabifadel" class="icon alt fa-github" target="_blank"><span class="label">GitHub</span></a></li>
+                
+                    <li><a href="https://www.linkedin.com/in/karim-abi-fadel" class="icon alt fa-linkedin" target="_blank"><span class="label">LinkedIn</span></a></li>
+                
+            </ul>
+            <ul class="copyright">
+                <li>&copy; Karim Abi Fadel</li>
+                
+            </ul>
+        </div>
+    </footer>
+
+            
+        </div>
+
+    <!-- Scripts -->
+        <!-- Scripts -->
+    <!-- jQuery -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jquery.scrolly.min.js"></script>
+    <script src="/js/jquery.scrollex.min.js"></script>
+    <script src="/js/skel.min.js"></script>
+    <script src="/js/util.js"></script>
+
+    
+
+    <!-- Main JS -->
+    <script src="/js/main.js"></script>
+
+    
+
+    
+
+    </body>
+</html>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Portfolio website for Karim Abi Fadel</title>
+    <link>/</link>
+    <description>Recent content on Portfolio website for Karim Abi Fadel</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 06 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Climate Change</title>
+      <link>/projects/project3/</link>
+      <pubDate>Tue, 06 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/projects/project3/</guid>
+      <description>Climate change and temperature anomaliesIn order to study climate change, we can find data on the Combined Land-Surface Air and Sea-Surface Water Temperature Anomalies in the Northern Hemisphere at NASA’s Goddard Institute for Space Studies. The tabular data of temperature anomalies can be found here
+weather &amp;lt;- read_csv(&amp;quot;https://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts+dSST.csv&amp;quot;, skip = 1, na = &amp;quot;***&amp;quot;)weather## # A tibble: 140 x 19## Year Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov## &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;## 1 1880 -0.</description>
+    </item>
+    
+    <item>
+      <title>Financial Returns</title>
+      <link>/projects/project1/</link>
+      <pubDate>Tue, 06 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/projects/project1/</guid>
+      <description>Returns of financial stocksHistorical data of stock prices is to used calculate returns, and examine the distribution of returns.
+nyse &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;nyse.csv&amp;quot;))The table and bar plot show the number of companies per sector, in descending ordercompanies_sector &amp;lt;- nyse %&amp;gt;%group_by(sector) %&amp;gt;%count() %&amp;gt;%arrange(desc(n))companies_sector## # A tibble: 12 x 2## # Groups: sector [12]## sector n## &amp;lt;chr&amp;gt; &amp;lt;int&amp;gt;## 1 Finance 97## 2 Consumer Services 79## 3 Public Utilities 60## 4 Capital Goods 45## 5 Health Care 45## 6 Energy 42## 7 Technology 40## 8 Basic Industries 39## 9 Consumer Non-Durables 31## 10 Miscellaneous 12## 11 Transportation 10## 12 Consumer Durables 8ggplot(companies_sector, aes(x = n, y = reorder(sector, n))) +geom_col() + labs(title = &amp;quot;The finance sector takes the lead&amp;quot;,subtitle = &amp;quot;Number of companies per sector in NYSE&amp;quot;,x = &amp;quot;Number of Companies&amp;quot;,y = &amp;quot;&amp;quot;) +theme_economist()Next, the Dow Jones Industrial Aveareg (DJIA) stocks and their ticker symbols are downloaded.</description>
+    </item>
+    
+    <item>
+      <title>HR Analytics</title>
+      <link>/projects/project2/</link>
+      <pubDate>Tue, 06 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/projects/project2/</guid>
+      <description>IBM HR AnalyticsA data set on Human Resoruce Analytics is analysed in this project. The IBM HR Analytics Employee Attrition &amp;amp; Performance data set is a fictional data set created by IBM data scientists. Among other things, the data set includes employees’ income, their distance from work, their position in the company, their level of education, etc.
+hr_dataset &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;, &amp;quot;datasets_1067_1925_WA_Fn-UseC_-HR-Employee-Attrition.csv&amp;quot;))The data set is cleaned.
+hr_cleaned &amp;lt;- hr_dataset %&amp;gt;% clean_names() %&amp;gt;% mutate(education = case_when(education == 1 ~ &amp;quot;Below College&amp;quot;,education == 2 ~ &amp;quot;College&amp;quot;,education == 3 ~ &amp;quot;Bachelor&amp;quot;,education == 4 ~ &amp;quot;Master&amp;quot;,education == 5 ~ &amp;quot;Doctor&amp;quot;),environment_satisfaction = case_when(environment_satisfaction == 1 ~ &amp;quot;Low&amp;quot;,environment_satisfaction == 2 ~ &amp;quot;Medium&amp;quot;,environment_satisfaction == 3 ~ &amp;quot;High&amp;quot;,environment_satisfaction == 4 ~ &amp;quot;Very High&amp;quot;),job_satisfaction = case_when(job_satisfaction == 1 ~ &amp;quot;Low&amp;quot;,job_satisfaction == 2 ~ &amp;quot;Medium&amp;quot;,job_satisfaction == 3 ~ &amp;quot;High&amp;quot;,job_satisfaction == 4 ~ &amp;quot;Very High&amp;quot;),performance_rating = case_when(performance_rating == 1 ~ &amp;quot;Low&amp;quot;,performance_rating == 2 ~ &amp;quot;Good&amp;quot;,performance_rating == 3 ~ &amp;quot;Excellent&amp;quot;,performance_rating == 4 ~ &amp;quot;Outstanding&amp;quot;),work_life_balance = case_when(work_life_balance == 1 ~ &amp;quot;Bad&amp;quot;,work_life_balance == 2 ~ &amp;quot;Good&amp;quot;,work_life_balance == 3 ~ &amp;quot;Better&amp;quot;,work_life_balance == 4 ~ &amp;quot;Best&amp;quot;)) %&amp;gt;% select(age, attrition, daily_rate, department,distance_from_home, education,gender, job_role,environment_satisfaction,job_satisfaction, marital_status,monthly_income, num_companies_worked, percent_salary_hike,performance_rating, total_working_years,work_life_balance, years_at_company,years_since_last_promotion)Let’s start analysing the data!</description>
+    </item>
+    
+    <item>
+      <title>World Data</title>
+      <link>/projects/project4/</link>
+      <pubDate>Tue, 06 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/projects/project4/</guid>
+      <description>World Data# load gapminder HIV datahiv &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;adults_with_hiv_percent_age_15_49.csv&amp;quot;))life_expectancy &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;life_expectancy_years.csv&amp;quot;))# get World bank data using wbstatsindicators &amp;lt;- c(&amp;quot;SP.DYN.TFRT.IN&amp;quot;,&amp;quot;SE.PRM.NENR&amp;quot;, &amp;quot;SH.DYN.MORT&amp;quot;, &amp;quot;NY.GDP.PCAP.KD&amp;quot;)library(wbstats)worldbank_data &amp;lt;- wb_data(country=&amp;quot;countries_only&amp;quot;, #countries only- no aggregates like Latin America, Europe, etc.indicator = indicators, start_date = 1960, end_date = 2016)# get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels, from the World Bank API countries &amp;lt;- wbstats::wb_cachelist$countrieshiv_tidy &amp;lt;- hiv %&amp;gt;% pivot_longer(cols=&amp;quot;1979&amp;quot;:&amp;quot;2011&amp;quot;, names_to = &amp;quot;date&amp;quot;, values_to = &amp;quot;hiv_prev&amp;quot;)life_expectancy_tidy &amp;lt;- life_expectancy %&amp;gt;%select(country, c(&amp;quot;1960&amp;quot;:&amp;quot;2016&amp;quot;)) %&amp;gt;% pivot_longer(cols=&amp;quot;1960&amp;quot;:&amp;quot;2016&amp;quot;, names_to = &amp;quot;date&amp;quot;, values_to = &amp;quot;life_exp&amp;quot;)# Used outer join over here since we don&amp;#39;t want to exclude any values from either data framehiv_life_merged &amp;lt;- merge(x = hiv_tidy, y = life_expectancy_tidy, by = c(&amp;quot;country&amp;quot;,&amp;quot;date&amp;quot;), all = TRUE)# Used outer join for hiv_life_merged and world_bank_data with key country and date.</description>
+    </item>
+    
+    <item>
+      <title>Aliquam</title>
+      <link>/blogs/aliquam/</link>
+      <pubDate>Tue, 31 Oct 2017 22:42:51 -0500</pubDate>
+      
+      <guid>/blogs/aliquam/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Tempus</title>
+      <link>/blogs/tempus/</link>
+      <pubDate>Tue, 31 Oct 2017 22:26:13 -0500</pubDate>
+      
+      <guid>/blogs/tempus/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Magna</title>
+      <link>/blogs/magna/</link>
+      <pubDate>Tue, 31 Oct 2017 22:26:09 -0500</pubDate>
+      
+      <guid>/blogs/magna/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Ipsum</title>
+      <link>/blogs/ipsum/</link>
+      <pubDate>Tue, 31 Oct 2017 21:28:43 -0500</pubDate>
+      
+      <guid>/blogs/ipsum/</guid>
+      <description>Nullam et orci eu lorem consequat tincidunt vivamus et sagittis magna sed nunc rhoncus condimentum sem. In efficitur ligula tate urna. Maecenas massa sed magna lacinia magna pellentesque lorem ipsum dolor. Nullam et orci eu lorem consequat tincidunt. Vivamus et sagittis tempus.</description>
+    </item>
+    
+    <item>
+      <title>Hello R Markdown</title>
+      <link>/post/2015-07-23-r-rmarkdown/</link>
+      <pubDate>Thu, 23 Jul 2015 21:13:14 -0500</pubDate>
+      
+      <guid>/post/2015-07-23-r-rmarkdown/</guid>
+      <description>R MarkdownThis is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see http://rmarkdown.rstudio.com.
+You can embed an R code chunk like this:
+summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 26.00 ## Median :15.0 Median : 36.00 ## Mean :15.4 Mean : 42.98 ## 3rd Qu.</description>
+    </item>
+    
+  </channel>
+</rss>
