@@ -1,4 +1,5 @@
 # Site settings
+# Author: Karim Abi Fadel
 baseURL = "https://karim-abi-fadel.netlify.app/"
 languageCode = "en-us"
 title = "Portfolio website for Karim Abi Fadel"
